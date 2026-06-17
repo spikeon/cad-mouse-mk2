@@ -1,102 +1,147 @@
 #!/usr/bin/env python3
 """
-Patches spacenav-ws so buttons don't snap the OnShape view.
+Patches spacenav-ws with two fixes:
 
-By default, spacenav-ws interprets button presses as "snap to front view".
-This patch makes button events a no-op in spacenav-ws — button mapping is
-handled separately by spnav-buttons.
+1. controller.py — buttons no longer snap the OnShape view to front
+2. main.py — spacenav-ws reconnects to spacenavd automatically on replug,
+             keeping the OnShape WebSocket alive (no tab refresh needed)
 
 Usage:
     python3 patch-spacenav-ws.py           # auto-find and patch
-    python3 patch-spacenav-ws.py /path/to/controller.py
+    python3 patch-spacenav-ws.py /path/to/spacenav_ws/
 """
 import glob
+import os
 import re
 import subprocess
 import sys
 
 
-def find_controller():
-    # Try via uv run (works if spacenav-ws is installed as a uv tool)
+def find_package_dir():
+    """Return the spacenav_ws package directory, or None."""
+    # Try via uv run
     try:
         result = subprocess.run(
             [
                 "uv", "run", "--with", "spacenav-ws", "python3", "-c",
-                "import spacenav_ws.controller; print(spacenav_ws.controller.__file__)",
+                "import spacenav_ws; print(spacenav_ws.__path__[0])",
             ],
             capture_output=True, text=True, timeout=30,
         )
         path = result.stdout.strip()
-        if result.returncode == 0 and path:
+        if result.returncode == 0 and path and os.path.isdir(path):
             return path
     except Exception:
         pass
 
-    # Search in uv cache (works when spacenav-ws is run via uvx)
-    import os
+    # Search uv cache
     home = os.path.expanduser("~")
     for pattern in [
-        f"{home}/.cache/uv/**/spacenav_ws/controller.py",
-        f"{home}/.local/share/uv/**/spacenav_ws/controller.py",
+        f"{home}/.cache/uv/**/spacenav_ws/__init__.py",
+        f"{home}/.local/share/uv/**/spacenav_ws/__init__.py",
     ]:
         matches = glob.glob(pattern, recursive=True)
         if matches:
-            return matches[0]
+            return os.path.dirname(matches[0])
 
     return None
 
 
-def patch(path):
+def patch_controller(path):
+    """Disable the button-snap-to-front-view behaviour."""
     with open(path) as f:
         content = f.read()
 
-    # Already patched: ButtonEvent handler body is just 'return'
-    if re.search(
-        r"if isinstance\(event, ButtonEvent\):\s*\n\s+return\s*\n", content
-    ):
-        print(f"Already patched: {path}")
+    if re.search(r"if isinstance\(event, ButtonEvent\):\s*\n\s+return\s*\n", content):
+        print(f"  controller.py: already patched")
         return True
 
     if "isinstance(event, ButtonEvent)" not in content:
-        print(f"ERROR: ButtonEvent check not found in {path}", file=sys.stderr)
-        print("Wrong file or spacenav-ws version not supported.", file=sys.stderr)
+        print(f"  controller.py: ERROR — ButtonEvent check not found", file=sys.stderr)
         return False
 
-    # Replace the entire body of the ButtonEvent block with just 'return'
     patched = re.sub(
         r"(        if isinstance\(event, ButtonEvent\):)(?:\n            [^\n]+)+",
         r"\1\n            return",
         content,
     )
-
     if patched == content:
-        print(f"ERROR: Could not apply patch to {path}", file=sys.stderr)
-        print(
-            "Manual fix: find 'if isinstance(event, ButtonEvent):' and make "
-            "the only line in that block 'return'",
-            file=sys.stderr,
-        )
+        print(f"  controller.py: ERROR — patch target not found", file=sys.stderr)
         return False
 
     with open(path, "w") as f:
         f.write(patched)
-    print(f"Patched: {path}")
+    print(f"  controller.py: patched")
+    return True
+
+
+# Reconnect wrapper inserted into nlproxy, replacing the bare TaskGroup call.
+_RECONNECT_WRAPPER = """\
+    async def _mouse_with_reconnect():
+        while True:
+            try:
+                await ctrl.start_mouse_event_stream()
+            except Exception as _e:
+                logging.warning(f"spacenavd disconnected ({_e}), reconnecting...")
+                while True:
+                    await asyncio.sleep(1)
+                    try:
+                        _r, _ = await asyncio.open_unix_connection("/var/run/spnav.sock")
+                        ctrl.reader = _r
+                        logging.info("Reconnected to spacenavd")
+                        break
+                    except OSError:
+                        pass
+
+    async with asyncio.TaskGroup() as tg:
+        tg.create_task(_mouse_with_reconnect(), name="mouse")
+        tg.create_task(ctrl.wamp_state_handler.start_wamp_message_stream(), name="wamp")
+"""
+
+_OLD_TASKGROUP = """\
+    async with asyncio.TaskGroup() as tg:
+        tg.create_task(ctrl.start_mouse_event_stream(), name="mouse")
+        tg.create_task(ctrl.wamp_state_handler.start_wamp_message_stream(), name="wamp")
+"""
+
+
+def patch_main(path):
+    """Make spacenav-ws reconnect to spacenavd on replug without restarting."""
+    with open(path) as f:
+        content = f.read()
+
+    if "_mouse_with_reconnect" in content:
+        print(f"  main.py: already patched")
+        return True
+
+    if _OLD_TASKGROUP not in content:
+        print(f"  main.py: ERROR — patch target not found (version mismatch?)", file=sys.stderr)
+        print(f"  main.py: manually replace the TaskGroup in nlproxy with a reconnect wrapper", file=sys.stderr)
+        return False
+
+    patched = content.replace(_OLD_TASKGROUP, _RECONNECT_WRAPPER)
+    with open(path, "w") as f:
+        f.write(patched)
+    print(f"  main.py: patched")
     return True
 
 
 if __name__ == "__main__":
     if len(sys.argv) > 1:
-        path = sys.argv[1]
+        pkg_dir = sys.argv[1]
     else:
-        print("Locating spacenav-ws controller.py...")
-        path = find_controller()
-        if not path:
+        print("Locating spacenav-ws package...")
+        pkg_dir = find_package_dir()
+        if not pkg_dir:
             print(
-                "ERROR: spacenav-ws not found in uv cache.\n"
-                "Run 'uvx spacenav-ws@latest serve' once first, then re-run this script.",
+                "ERROR: spacenav-ws not found.\n"
+                "Run 'uvx spacenav-ws@latest serve --help' once to cache it, then retry.",
                 file=sys.stderr,
             )
             sys.exit(1)
-        print(f"Found: {path}")
+        print(f"Found: {pkg_dir}\n")
 
-    sys.exit(0 if patch(path) else 1)
+    ok = True
+    ok &= patch_controller(os.path.join(pkg_dir, "controller.py"))
+    ok &= patch_main(os.path.join(pkg_dir, "main.py"))
+    sys.exit(0 if ok else 1)
