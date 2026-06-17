@@ -40,6 +40,7 @@ const unsigned long LED_IDLE_COLOR = 0x00FF00;
 const unsigned long LED_CALIBRATING_COLOR = 0x0000FF;
 
 // FSM timing
+// Set to -1 (never sleep) — on Linux the device did not wake from sleep state
 const long IDLE_SLEEP_TIMEOUT_MS = -1;
 
 }  // namespace Config
