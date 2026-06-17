@@ -2,6 +2,8 @@
 
 The LED ring color and brightness can be configured without reflashing. Changes are stored in flash and persist across power cycles.
 
+[Watch it in action ↗](https://youtube.com/shorts/Vf_1ArsoVSY?si=YxogaUzM-TPjQ7zr)
+
 ## Color wheel
 
 The device cycles through the standard RGB color wheel:
