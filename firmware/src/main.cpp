@@ -82,6 +82,13 @@ void handleSerial() {
 // ── Arduino entry points ──────────────────────────────────────────────────────
 
 void setup() {
+  // Check for bootloader mode before any USB init: plug in while holding both buttons
+  pinMode(Config::PIN_LEFT_BTN, INPUT_PULLUP);
+  pinMode(Config::PIN_RIGHT_BTN, INPUT_PULLUP);
+  if (digitalRead(Config::PIN_LEFT_BTN) == LOW && digitalRead(Config::PIN_RIGHT_BTN) == LOW) {
+    rp2040.rebootToBootloader();
+  }
+
   // Initialize USB HID first
   hidController.begin();
 
