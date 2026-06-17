@@ -5,6 +5,7 @@ StateMachine stateMachine;
 IdleState StateMachine::idleState;
 SleepState StateMachine::sleepState;
 CalibratingState StateMachine::calibratingState;
+ColorConfigState StateMachine::colorConfigState;
 
 StateMachine::StateMachine() : currentState(nullptr) {}
 

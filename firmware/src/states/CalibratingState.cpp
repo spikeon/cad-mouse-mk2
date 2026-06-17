@@ -18,7 +18,11 @@ void CalibratingState::update() {
   sensorController.updateCalibration();
 
   if (sensorController.calibrationDone()) {
-    stateMachine.changeState(&StateMachine::idleState);
+    if (inputController.takeColorConfigRequest()) {
+      stateMachine.changeState(&StateMachine::colorConfigState);
+    } else {
+      stateMachine.changeState(&StateMachine::idleState);
+    }
   }
 }
 

@@ -35,6 +35,11 @@ void LEDController::applyConfig() {
   }
 }
 
+void LEDController::setPreview(uint8_t brightness, unsigned long color) {
+  ring_.setBrightness(brightness);
+  setSolid(color);
+}
+
 void LEDController::setPower(bool enabled) {
   if (enabled == isPowered_) {
     return;

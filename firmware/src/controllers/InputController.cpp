@@ -6,7 +6,8 @@ using namespace ace_button;
 
 namespace {
 const long kCalibrationHoldMs = 3000;
-const uint16_t leftButtonMask = 0x0001;
+const long kColorConfigHoldMs = 6000;
+const uint16_t leftButtonMask  = 0x0001;
 const uint16_t rightButtonMask = 0x0002;
 }
 
@@ -24,11 +25,15 @@ void InputController::begin() {
 
   instance_ = this;
   calibrationRequested_ = false;
+  colorConfigRequested_ = false;
   hadActivity_ = false;
   bothHeldStartMs_ = 0;
   calibrationHoldFired_ = false;
+  colorConfigHoldFired_ = false;
   leftPressed_ = false;
   rightPressed_ = false;
+  leftClicked_ = false;
+  rightClicked_ = false;
 }
 
 void InputController::update() {
@@ -39,6 +44,7 @@ void InputController::update() {
   if (!areBothPressed()) {
     bothHeldStartMs_ = 0;
     calibrationHoldFired_ = false;
+    colorConfigHoldFired_ = false;
     return;
   }
 
@@ -47,27 +53,49 @@ void InputController::update() {
     return;
   }
 
-  if (!calibrationHoldFired_ && (now - bothHeldStartMs_) >= kCalibrationHoldMs) {
+  const unsigned long heldMs = now - bothHeldStartMs_;
+
+  if (!calibrationHoldFired_ && heldMs >= kCalibrationHoldMs) {
     calibrationRequested_ = true;
     hadActivity_ = true;
     calibrationHoldFired_ = true;
+  }
+
+  if (!colorConfigHoldFired_ && heldMs >= kColorConfigHoldMs) {
+    colorConfigRequested_ = true;
+    hadActivity_ = true;
+    colorConfigHoldFired_ = true;
   }
 }
 
 uint16_t InputController::buttonBits() const {
   uint16_t bits = 0;
-  if (leftPressed_) {
-    bits |= leftButtonMask;
-  }
-  if (rightPressed_) {
-    bits |= rightButtonMask;
-  }
+  if (leftPressed_)  bits |= leftButtonMask;
+  if (rightPressed_) bits |= rightButtonMask;
   return bits;
 }
 
 bool InputController::takeCalibrationRequest() {
   const bool out = calibrationRequested_;
   calibrationRequested_ = false;
+  return out;
+}
+
+bool InputController::takeColorConfigRequest() {
+  const bool out = colorConfigRequested_;
+  colorConfigRequested_ = false;
+  return out;
+}
+
+bool InputController::takeLeftClick() {
+  const bool out = leftClicked_;
+  leftClicked_ = false;
+  return out;
+}
+
+bool InputController::takeRightClick() {
+  const bool out = rightClicked_;
+  rightClicked_ = false;
   return out;
 }
 
@@ -79,9 +107,7 @@ bool InputController::takeActivity() {
 
 void InputController::handleButtonEvent(AceButton* button, uint8_t eventType,
                                         uint8_t /*buttonState*/) {
-  if (instance_ == nullptr) {
-    return;
-  }
+  if (instance_ == nullptr) return;
   instance_->onButtonEvent(button, eventType);
 }
 
@@ -89,8 +115,10 @@ void InputController::onButtonEvent(AceButton* button, uint8_t eventType) {
   if (eventType == AceButton::kEventPressed) {
     if (button->getPin() == Config::PIN_LEFT_BTN) {
       leftPressed_ = true;
+      leftClicked_ = true;
     } else if (button->getPin() == Config::PIN_RIGHT_BTN) {
       rightPressed_ = true;
+      rightClicked_ = true;
     } else {
       return;
     }

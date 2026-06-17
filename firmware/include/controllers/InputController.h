@@ -11,6 +11,9 @@ class InputController {
 
   uint16_t buttonBits() const;
   bool takeCalibrationRequest();
+  bool takeColorConfigRequest();
+  bool takeLeftClick();
+  bool takeRightClick();
   bool takeActivity();
 
  private:
@@ -23,11 +26,15 @@ class InputController {
   ace_button::AceButton rightBtn_;
 
   bool calibrationRequested_ = false;
+  bool colorConfigRequested_ = false;
   bool hadActivity_ = false;
   unsigned long bothHeldStartMs_ = 0;
   bool calibrationHoldFired_ = false;
+  bool colorConfigHoldFired_ = false;
   bool leftPressed_ = false;
   bool rightPressed_ = false;
+  bool leftClicked_ = false;
+  bool rightClicked_ = false;
 
   static InputController* instance_;
 };

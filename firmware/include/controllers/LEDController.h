@@ -8,6 +8,7 @@ class LEDController {
   LEDController();
   void begin();
   void applyConfig();
+  void setPreview(uint8_t brightness, unsigned long color);
   void setSolid(unsigned long color);
   void startSpinner(unsigned long color);
   void updateSpinner();
