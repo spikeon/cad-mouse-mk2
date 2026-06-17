@@ -1,19 +1,36 @@
-# CAD Mouse MK2
+# CAD Mouse MK2 — Linux Fork
 
-Watch the build video ↓
+This is a fork of [sb-ocr/cad-mouse-mk2](https://github.com/sb-ocr/cad-mouse-mk2) with changes to make the device work on Linux with OnShape.
 
-[<img src="./images/CAD_Mouse_MK2_Thumbnail.jpg">](https://youtu.be/62xlzGs8LXA)
+## What's different
 
-This is the second iteration of my DIY CAD Mouse, rebuilt to behave like a real 6DoF controller. There are still some motion processing issues, but it's much better than the previous version. It uses a custom PCB with three magnetic sensors, a 3D printed spring, and a redesigned enclosure that is smaller and easier to build.
+**Firmware**
+- VID/PID spoofed to SpaceMouse Compact (`XXXX:YYYY`) so `spacenavd` recognises the device without custom configuration
+- LEDs set to white at full brightness
+- Sleep timeout disabled
 
-  Build instructions → [Instructables](https://www.instructables.com/CAD-Mouse-MK2-a-6DoF-Space-Mouse-Using-Magnets)
+**`linux/` directory** — full Linux integration, not in the original repo:
+- One-command installer (`install.sh`)
+- `spacenavd` + `spacenav-ws` WebSocket bridge for OnShape
+- Tampermonkey userscript so OnShape connects to the local bridge
+- Button mapper (`spnav-buttons`): scroll up/down while held, both buttons = Shift+7
+- udev rules with delayed restarts to avoid race conditions on plug-in
+- `spacemouse-status` health check script
+- Patches to `spacenav-ws` that disable the button-snap-to-front-view behaviour and add automatic reconnection to `spacenavd` (no OnShape tab refresh needed after replug)
 
-<sub>⚠️ There have been several comments raising concerns about the longevity of the PETG spring. If it does not last as expected, a revision of the knob design will be needed.</sub>
+## Linux setup
+
+See [linux/README.md](linux/README.md).
+
+## Original project
+
+Hardware design, build instructions, BOM, and enclosure files are from the original project:
+
+**[sb-ocr/cad-mouse-mk2](https://github.com/sb-ocr/cad-mouse-mk2)**
+
+Build instructions → [Instructables](https://www.instructables.com/CAD-Mouse-MK2-a-6DoF-Space-Mouse-Using-Magnets)
 
 [![CC BY-NC-SA 4.0][cc-by-nc-sa-shield]][cc-by-nc-sa]
 
-[![CC BY-NC-SA 4.0][cc-by-nc-sa-image]][cc-by-nc-sa]
-
 [cc-by-nc-sa]: http://creativecommons.org/licenses/by-nc-sa/4.0/
-[cc-by-nc-sa-image]: https://licensebuttons.net/l/by-nc-sa/4.0/88x31.png
 [cc-by-nc-sa-shield]: https://img.shields.io/badge/License-CC%20BY--NC--SA%204.0-lightgrey.svg
