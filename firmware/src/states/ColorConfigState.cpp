@@ -9,7 +9,7 @@
 
 namespace {
 const unsigned long kBlinkPeriodMs = 500;
-const float kRotTickThreshold = 120.0f;  // accumulated Rz units per step
+const float kRotTickThreshold = 1200.0f;  // accumulated Rz units per step
 const uint8_t kBrightnessStep = 8;       // brightness change per rotation tick
 const float kHueStep = 5.0f;             // degrees per rotation tick
 }
