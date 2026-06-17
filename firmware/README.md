@@ -1,17 +1,3 @@
-## Flashing firmware
-
-The RP2040 is flashed by copying a `.uf2` file onto the device when it appears as a USB drive (BOOTSEL mode).
-
-### Entering BOOTSEL mode
-
-**Without disassembly:**
-Hold both side buttons while plugging in the USB cable. The device will skip normal startup and mount immediately as a UF2 drive.
-
-**Hardware button:**
-Hold the BOOTSEL button on the XIAO RP2040 while plugging in USB. Requires opening the enclosure.
-
----
-
 You can customize several variables to tune gains, smoothing, and deadzones for all six axes.
 Most of these settings are defined in [`Config.h`](include/Config.h) and are the main place to adjust the overall feel of the device.
 
@@ -55,3 +41,15 @@ Rz = sum_i (posXi * magYi - posYi * magXi)
 - `Ry`: left-right z difference across the top edge
 - `Rx`: top pair versus bottom, scaled for the triangle geometry
 - `Rz`: twist estimate from the x/y sensor positions
+
+## Flashing firmware
+
+The RP2040 is flashed by copying a `.uf2` file onto the device when it appears as a USB drive (BOOTSEL mode).
+
+### Entering BOOTSEL mode
+
+**Without disassembly:**
+Hold both side buttons while plugging in the USB cable. The device will skip normal startup and mount immediately as a UF2 drive.
+
+**Hardware button:**
+Hold the BOOTSEL button on the XIAO RP2040 while plugging in USB. Requires opening the enclosure.
