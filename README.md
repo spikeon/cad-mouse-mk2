@@ -1,5 +1,19 @@
 # CAD Mouse MK2 — Linux Fork
 
+> ### 🚀 There's a newer, better version: **[linapse-cad-mouse-v2](https://github.com/spikeon/linapse-cad-mouse-v2)**
+>
+> This fork still works, but active development has moved to **Linapse** — a complete, polished Linux software stack for the CAD Mouse MK2. If you want the best experience, start there. It adds:
+>
+> - **A web configurator (GUI).** Remap buttons, taps, and chords; design RGB lighting; and tune the motion filter — all in the browser, applied to the device live. No editing scripts by hand.
+> - **Cap-tap gestures.** Tap the puck top/left/right/front/back (single, double, triple) and bind each to keys, clicks, scrolls, commands, or macros.
+> - **A live 3D test viewport.** Push a 3D Benchy around with the puck to feel sensitivity changes in real time while you tune.
+> - **Richer firmware.** Kalman-filtered motion, a sensitivity curve, an SK6812 LED effect engine (breathing, motion-reactive, swirls, rainbow), and serial telemetry.
+> - **A cleaner architecture.** One `linapse-service` bridges serial ↔ WebSocket for buttons, taps, lighting, and config.
+>
+> 👉 **[Check out linapse-cad-mouse-v2 →](https://github.com/spikeon/linapse-cad-mouse-v2)**
+
+---
+
 This is a fork of [sb-ocr/cad-mouse-mk2](https://github.com/sb-ocr/cad-mouse-mk2) with changes to make the device work on Linux with OnShape.
 
 ## What's different
